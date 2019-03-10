@@ -1,0 +1,2 @@
+I've spent hours going through You Tube vids and tutorials trying to understand how I run a run a word count program for Spark, in Scala, and the turn it into a jar file. I'm getting utterly confused now.
+I got Hello World running, and I've learn about going to the libraries to add in Apache.spark.spark-core, but now I'm getting
