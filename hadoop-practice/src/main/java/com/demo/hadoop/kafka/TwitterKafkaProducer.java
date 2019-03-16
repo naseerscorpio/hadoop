@@ -10,7 +10,6 @@ import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
 import org.apache.kafka.clients.producer.*;
-import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.util.Arrays;
@@ -23,8 +22,11 @@ public class TwitterKafkaProducer {
     private BlockingQueue<String> queue;
     private Gson gson;
     private Callback callback;
+    private String topic;
 
-    public TwitterKafkaProducer(String consumerKey, String consumerSecret, String token, String tokenSecret, String[] tags) {
+    public TwitterKafkaProducer(String consumerKey, String consumerSecret, String token, String tokenSecret,
+                                String topic, String[] tags) {
+        this.topic = topic;
         // Configure auth
         Authentication authentication = new OAuth1(consumerKey, consumerSecret, token, tokenSecret);
 
@@ -40,13 +42,13 @@ public class TwitterKafkaProducer {
         gson = new Gson();
     }
 
-    private Producer<Long, String> getProducer() {
+    private Producer<String, String> getProducer() {
         Properties properties = new Properties();
         properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "sandbox-hdp.hortonworks.com:6667");
         properties.put(ProducerConfig.ACKS_CONFIG, "1");
         properties.put(ProducerConfig.LINGER_MS_CONFIG, 500);
         properties.put(ProducerConfig.RETRIES_CONFIG, 0);
-        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class.getName());
+        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
         return new KafkaProducer<>(properties);
@@ -54,14 +56,16 @@ public class TwitterKafkaProducer {
 
     public void run() {
         client.connect();
-        try (Producer<Long, String> producer = getProducer()) {
+        try (Producer<String, String> producer = getProducer()) {
             while (true) {
-                Tweet tweet = gson.fromJson(queue.take(), Tweet.class);
-                System.out.printf("Fetched tweet id %d\n", tweet.getId());
 
-                long key = tweet.getId();
-                String msg = tweet.toString();
-                ProducerRecord<Long, String> record = new ProducerRecord<>("twitter-data", key, msg);
+                Tweet tweet = gson.fromJson(queue.take(), Tweet.class);
+
+                String key = tweet.getId_str();
+                String msg = gson.toJson(tweet);
+
+                System.out.printf("Fetched tweet msg %s\n", msg);
+                ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, msg);
                 producer.send(record, (metadata, exception) -> {
                     if (exception == null) {
                         System.out.printf("Message with offset %d acknowledged by partition %d\n",
@@ -83,7 +87,7 @@ public class TwitterKafkaProducer {
                 "fRHH1jMMyHfIXU6vT4zvkxfA3Yh015gkZ3MAbqoFA3gIjpaXPL",
                 "1979475403-erBTo7XoFPOiKZziYxxhKNklzigsfEEVcSmIRYM",
                 "EcbL7A8jBCAyMYHI4dJw06gKyHlZt5zZL0OxBXp37jkKP",
-                args
+                args[0],Arrays.copyOfRange(args, 1, args.length)
         );
         producer.run();
     }

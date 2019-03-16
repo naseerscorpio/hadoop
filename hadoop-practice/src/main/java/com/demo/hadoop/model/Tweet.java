@@ -3,8 +3,12 @@ package com.demo.hadoop.model;
 
 import com.google.gson.annotations.SerializedName;
 
-public class Tweet {
-    private long id;
+import java.io.Serializable;
+
+public class Tweet implements Serializable {
+
+    @SerializedName("id")
+    private String id_str;
     private String text;
     private String lang;
     private User user;
@@ -15,8 +19,8 @@ public class Tweet {
     @SerializedName("favorite_count")
     private int favoriteCount;
 
-    public Tweet(long id, String text, String lang, User user, int retweetCount, int favoriteCount) {
-        this.id = id;
+    public Tweet(String id, String text, String lang, User user, int retweetCount, int favoriteCount) {
+        this.id_str = id;
         this.text = text;
         this.lang = lang;
         this.user = user;
@@ -24,12 +28,12 @@ public class Tweet {
         this.favoriteCount = favoriteCount;
     }
 
-    public long getId() {
-        return id;
+    public String getId_str() {
+        return id_str;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setId_str(String id_str) {
+        this.id_str = id_str;
     }
 
     public String getText() {
@@ -72,16 +76,5 @@ public class Tweet {
         this.favoriteCount = favoriteCount;
     }
 
-    @Override
-    public String toString() {
-        return "Tweet{" +
-                "id=" + id +
-                ", text='" + text + '\'' +
-                ", lang='" + lang + '\'' +
-                ", user=" + user +
-                ", retweetCount=" + retweetCount +
-                ", favoriteCount=" + favoriteCount +
-                '}';
-    }
 }
 
