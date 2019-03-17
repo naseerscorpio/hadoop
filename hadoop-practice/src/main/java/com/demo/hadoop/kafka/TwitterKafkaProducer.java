@@ -83,11 +83,8 @@ public class TwitterKafkaProducer {
     }
 
     public static void main(String[] args) {
-        TwitterKafkaProducer producer = new TwitterKafkaProducer("Gzcz5T2y7vJnxYn6cz9kutZTt",
-                "fRHH1jMMyHfIXU6vT4zvkxfA3Yh015gkZ3MAbqoFA3gIjpaXPL",
-                "1979475403-erBTo7XoFPOiKZziYxxhKNklzigsfEEVcSmIRYM",
-                "EcbL7A8jBCAyMYHI4dJw06gKyHlZt5zZL0OxBXp37jkKP",
-                args[0],Arrays.copyOfRange(args, 1, args.length)
+        TwitterKafkaProducer producer = new TwitterKafkaProducer(args[0], args[1], args[2], args[4],
+                args[5], Arrays.copyOfRange(args, 6, args.length)
         );
         producer.run();
     }
