@@ -1,15 +1,19 @@
 package com.demo.hadoop;
 
 import com.demo.hadoop.hbase.HBaseDataframeWriter;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
 import org.apache.spark.TaskContext;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.streaming.Durations;
+import org.apache.spark.streaming.StreamingContext;
 import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka010.*;
@@ -36,8 +40,14 @@ public class DirectKafkaStream {
         String groupId = args[1];
         String topics = args[2];
 
-        SparkConf sparkConf = new SparkConf().setAppName("DirectKafkaStream");
-        JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, Durations.seconds(10));
+        JavaStreamingContext jssc = JavaStreamingContext.getOrCreate(CHECKPOINT_DIR,
+                () -> {
+                    SparkConf conf = new SparkConf().setAppName("DirectKafkaStream");
+                    JavaSparkContext sc = new JavaSparkContext(conf);
+                    JavaStreamingContext ssc = new JavaStreamingContext(sc, Durations.seconds(10));
+                    ssc.checkpoint(CHECKPOINT_DIR);
+                    return ssc;
+                }, new Configuration(), false);
 
         Map<String, Object> kafkaParams = new HashMap<>();
         kafkaParams.put("bootstrap.servers", brokers);
@@ -66,7 +76,7 @@ public class DirectKafkaStream {
                 LOGGER.info(
                         o.topic() + " " + o.partition() + " " + o.fromOffset() + " " + o.untilOffset());
             });
-            if(!rdd.isEmpty()){
+            if (!rdd.isEmpty()) {
                 //Convert to Dataframe
                 SQLContext sqlContext = SQLContext.getOrCreate(rdd.context());
                 Dataset<Row> df = sqlContext.read().json(rdd.map(record -> record.value()));
